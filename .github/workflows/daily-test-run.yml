@@ -1,0 +1,215 @@
+name: Daily Automated Test Execution
+
+on:
+  schedule:
+    # Runs at 6:00 AM IST (12:30 AM UTC) every day
+    - cron: '30 0 * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps chromium
+
+    - name: Run Playwright tests
+      continue-on-error: true
+      run: npx playwright test --project=chromium
+      env:
+        CI: true
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: test-results/
+        retention-days: 30
+
+    - name: Upload Playwright Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: playwright-report
+        path: playwright-report/
+        retention-days: 30
+
+    - name: Generate Test Summary
+      if: always()
+      run: |
+        echo "## Test Execution Summary" >> $GITHUB_STEP_SUMMARY
+        echo "**Date:** $(date)" >> $GITHUB_STEP_SUMMARY
+        echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ -f test-results/results.json ]; then
+          node -e "
+            const fs = require('fs');
+            const results = JSON.parse(fs.readFileSync('test-results/results.json', 'utf8'));
+            const stats = results.stats || {};
+            const total = (stats.expected || 0) + (stats.unexpected || 0) + (stats.flaky || 0) + (stats.skipped || 0);
+            const passed = stats.expected || 0;
+            const failed = stats.unexpected || 0;
+            const skipped = stats.skipped || 0;
+            const duration = (results.stats?.duration || 0) / 1000;
+            
+            console.log('### Results');
+            console.log('| Metric | Count |');
+            console.log('|--------|-------|');
+            console.log(\`| ✅ Passed | \${passed} |\`);
+            console.log(\`| ❌ Failed | \${failed} |\`);
+            console.log(\`| ⏭️ Skipped | \${skipped} |\`);
+            console.log(\`| 📊 Total | \${total} |\`);
+            console.log(\`| ⏱️ Duration | \${duration.toFixed(2)}s |\`);
+          " >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Send Email Report
+      if: always()
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 465
+        secure: true
+        username: ${{ secrets.EMAIL_USERNAME }}
+        password: ${{ secrets.EMAIL_PASSWORD }}
+        subject: "Skolasti Test Automation Report - ${{ github.run_id }}"
+        to: ${{ secrets.EMAIL_RECIPIENTS }}
+        from: Skolasti Test Automation
+        html_body: file://email-report.html
+        attachments: playwright-report/index.html
+
+    - name: Create Email Report HTML
+      if: always()
+      run: |
+        cat > email-report.html << 'EOF'
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
+            .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+            h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+            .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 20px 0; }
+            .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; text-align: center; }
+            .stat-card.passed { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+            .stat-card.failed { background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); }
+            .stat-card.skipped { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+            .stat-value { font-size: 36px; font-weight: bold; }
+            .stat-label { font-size: 14px; opacity: 0.9; margin-top: 5px; }
+            .info { background: #ecf0f1; padding: 15px; border-radius: 5px; margin: 20px 0; }
+            .info strong { color: #2c3e50; }
+            .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #7f8c8d; font-size: 12px; }
+            a { color: #3498db; text-decoration: none; }
+            a:hover { text-decoration: underline; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>🎭 Skolasti Test Automation Report</h1>
+            
+            <div class="info">
+              <strong>Execution Date:</strong> $(date '+%Y-%m-%d %H:%M:%S')<br>
+              <strong>Branch:</strong> ${{ github.ref_name }}<br>
+              <strong>Commit:</strong> ${{ github.sha }}<br>
+              <strong>Triggered By:</strong> ${{ github.actor }}
+            </div>
+
+            <h2>Test Results Summary</h2>
+            <div class="summary">
+              <div class="stat-card passed">
+                <div class="stat-value" id="passed">0</div>
+                <div class="stat-label">✅ Passed</div>
+              </div>
+              <div class="stat-card failed">
+                <div class="stat-value" id="failed">0</div>
+                <div class="stat-label">❌ Failed</div>
+              </div>
+              <div class="stat-card skipped">
+                <div class="stat-value" id="skipped">0</div>
+                <div class="stat-label">⏭️ Skipped</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value" id="duration">0</div>
+                <div class="stat-label">⏱️ Duration (min)</div>
+              </div>
+            </div>
+
+            <div class="info">
+              <strong>📊 View Full Report:</strong> 
+              <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">
+                Click here to view detailed test results on GitHub Actions
+              </a>
+            </div>
+
+            <div class="footer">
+              <p>This is an automated report from Skolasti Test Automation Suite</p>
+              <p>Powered by Playwright | GitHub Actions</p>
+            </div>
+          </div>
+
+          <script>
+            // Parse test results if available
+            const results = { passed: 0, failed: 0, skipped: 0, duration: 0 };
+            
+            document.getElementById('passed').textContent = results.passed;
+            document.getElementById('failed').textContent = results.failed;
+            document.getElementById('skipped').textContent = results.skipped;
+            document.getElementById('duration').textContent = (results.duration / 60).toFixed(2);
+          </script>
+        </body>
+        </html>
+        EOF
+
+    - name: Comment PR with results
+      if: github.event_name == 'pull_request' && always()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          let resultsJson = {};
+          try {
+            resultsJson = JSON.parse(fs.readFileSync('test-results/results.json', 'utf8'));
+          } catch (e) {
+            console.log('No results file found');
+          }
+          
+          const stats = resultsJson.stats || {};
+          const passed = stats.expected || 0;
+          const failed = stats.unexpected || 0;
+          const skipped = stats.skipped || 0;
+          const total = passed + failed + skipped;
+          
+          const body = `## 🎭 Test Results
+          
+          | Status | Count |
+          |--------|-------|
+          | ✅ Passed | ${passed} |
+          | ❌ Failed | ${failed} |
+          | ⏭️ Skipped | ${skipped} |
+          | 📊 Total | ${total} |
+          
+          [View full report](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          `;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: body
+          });

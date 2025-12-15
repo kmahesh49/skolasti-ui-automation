@@ -1,0 +1,49 @@
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/tests/.auth/
+
+# Test artifacts
+*.png
+*.mp4
+*.webm
+trace.zip
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Temporary files
+*.tmp
+*.temp
+~$*
+
+# Reports (keep only in CI/CD)
+junit.xml
+results.json
