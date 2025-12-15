@@ -89,29 +89,35 @@ test.describe('Coach View - Subscription Plans Management', () => {
     }
 
     // Navigate to Subscription Plans
-    await page.goto(`${coachBaseUrl}/subscription_plan`);
-    await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(3000);
+    await page.goto(`${coachBaseUrl}/subscription_plan`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(5000); // Wait longer for page to fully load
     console.log('✓ Navigated to Subscription Plans page');
 
     // Verify Subscription Plans heading - handle both states
     const mainHeading = page.getByRole('heading', { name: 'Subscription Plans', exact: true });
     const emptyHeading = page.getByRole('heading', { name: 'No subscription plans yet' });
     
-    // Check if either heading is visible
-    const hasPlans = await mainHeading.isVisible().catch(() => false);
-    const isEmpty = await emptyHeading.isVisible().catch(() => false);
+    // Check if either heading is visible with longer timeout
+    const hasPlans = await mainHeading.isVisible({ timeout: 10000 }).catch(() => false);
+    const isEmpty = await emptyHeading.isVisible({ timeout: 10000 }).catch(() => false);
     
     if (hasPlans || isEmpty) {
       console.log('✓ Subscription Plans page loaded', isEmpty ? '(empty state)' : '(with plans)');
     } else {
+      // Take screenshot for debugging
+      await page.screenshot({ path: 'subscription-plans-load-error.png', fullPage: true });
+      console.error('Page URL:', page.url());
+      console.error('Page title:', await page.title());
       throw new Error('Subscription Plans page did not load correctly');
     }
 
     // === CLICK ADD NEW PLAN ===
+    // Wait for the button to be available
+    await page.waitForTimeout(2000);
+    
     // Try multiple selectors for the Add New Plan button
     let addNewPlanBtn = page.getByRole('button', { name: /Add New Plan/i });
-    let btnVisible = await addNewPlanBtn.isVisible().catch(() => false);
+    let btnVisible = await addNewPlanBtn.isVisible({ timeout: 10000 }).catch(() => false);
     
     if (!btnVisible) {
       // Try with + sign
@@ -136,6 +142,14 @@ test.describe('Coach View - Subscription Plans Management', () => {
       console.log('✓ Clicked "+ Add New Plan" button');
       await page.waitForTimeout(3000);
     } else {
+      // Take screenshot for debugging
+      await page.screenshot({ path: 'add-new-plan-button-not-found.png', fullPage: true });
+      console.error('Available buttons:', await page.locator('button').count());
+      const buttons = await page.locator('button').all();
+      for (const btn of buttons.slice(0, 10)) { // Log first 10 buttons
+        const text = await btn.textContent().catch(() => '');
+        console.error('Button text:', text);
+      }
       throw new Error('Add New Plan button not found');
     }
 
