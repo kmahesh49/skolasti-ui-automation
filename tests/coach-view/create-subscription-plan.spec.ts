@@ -760,12 +760,14 @@ test.describe('Coach View - Subscription Plans Management', () => {
         break;
       }
       
-      // Also check if the plan name no longer exists
-      const planNameStillExists = await page.getByText(updatedPlanName, { exact: true }).isVisible().catch(() => false);
-      if (!planNameStillExists) {
-        deleteVerified = true;
-        console.log('✓ Plan successfully deleted (plan name no longer visible)');
-        break;
+      // Also check if the plan name no longer exists (using the original planName variable)
+      if (planName) {
+        const planNameStillExists = await page.getByText(planName, { exact: true }).isVisible().catch(() => false);
+        if (!planNameStillExists) {
+          deleteVerified = true;
+          console.log('✓ Plan successfully deleted (plan name no longer visible)');
+          break;
+        }
       }
       
       attempts++;
