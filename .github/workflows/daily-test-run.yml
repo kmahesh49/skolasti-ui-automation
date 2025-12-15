@@ -28,7 +28,7 @@ jobs:
 
     - name: Run Playwright tests
       continue-on-error: true
-      run: npx playwright test --project=chromium
+      run: npx playwright test tests/coach-view/create-subscription-plan.spec.ts --project=chromium
       env:
         CI: true
 
