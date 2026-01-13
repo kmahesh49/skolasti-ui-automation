@@ -9,7 +9,7 @@ test.describe('Coach View - Home and Navigation', () => {
     // due to the login page not loading correctly (503 errors on JavaScript modules).
     // The page gets stuck on the OAuth login screen instead of completing authentication.
     // Login to learner view
-    await page.goto('https://skolastidev1.skolasti.com/learner/login');
+    await page.goto('https://harvarduniversitytest.skillrok.com/learner/login');
     await new Promise(f => setTimeout(f, 10 * 1000));
     
     // Try up to 2 times if page doesn't load
@@ -22,7 +22,7 @@ test.describe('Coach View - Home and Navigation', () => {
       await new Promise(f => setTimeout(f, 8 * 1000));
     }
     
-    await page.getByRole('textbox', { name: 'Email' }).fill('Sirisha.b@inovar-tech.com');
+    await page.getByRole('textbox', { name: 'Email' }).fill('gopikrishna2221@gmail.com');
     await page.getByRole('textbox', { name: 'Password' }).fill('Skolasti@123');
     await page.getByRole('button', { name: ' Submit' }).click();
     await new Promise(f => setTimeout(f, 15 * 1000));

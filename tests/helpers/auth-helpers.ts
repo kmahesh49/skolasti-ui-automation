@@ -15,13 +15,18 @@ const coachPassword = 'Skolasti@123';
 export async function loginToLearnerView(page: Page, email: string = coachEmail, password: string = coachPassword) {
   // Navigate and wait for page to be ready
   await page.goto('https://harvarduniversitytest.skillrok.com/learner/login');
-  await new Promise(f => setTimeout(f, 5 * 1000));
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForTimeout(3000);
   
   // Fill login credentials
   await page.getByRole('textbox', { name: 'Email' }).fill(email);
   await page.getByRole('textbox', { name: 'Password' }).fill(password);
+  
+  // Click submit and wait for navigation
   await page.getByRole('button', { name: ' Submit' }).click();
-  await new Promise(f => setTimeout(f, 10 * 1000));
+  await page.waitForURL(/learner/, { timeout: 60000 });
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForTimeout(5000);
 }
 
 /**
