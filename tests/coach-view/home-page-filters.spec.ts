@@ -8,8 +8,8 @@ test.describe('Coach View - Home and Navigation', () => {
     // FIXME: This test passes when run individually but fails when run with other tests in parallel
     // due to the login page not loading correctly (503 errors on JavaScript modules).
     // The page gets stuck on the OAuth login screen instead of completing authentication.
-    // Login to learner view
-    await page.goto('https://skolastidev1.skolasti.com/learner/login');
+    // Login to coach view directly
+    await page.goto('https://patashala-testjan16-820.skillrok.com/coach/login');
     await new Promise(f => setTimeout(f, 10 * 1000));
     
     // Try up to 2 times if page doesn't load
@@ -22,18 +22,10 @@ test.describe('Coach View - Home and Navigation', () => {
       await new Promise(f => setTimeout(f, 8 * 1000));
     }
     
-    await page.getByRole('textbox', { name: 'Email' }).fill('Sirisha.b@inovar-tech.com');
-    await page.getByRole('textbox', { name: 'Password' }).fill('Skolasti@123');
-    await page.getByRole('button', { name: ' Submit' }).click();
+    await page.getByRole('textbox', { name: /Email/i }).fill('gopikrishna2221@gmail.com');
+    await page.getByRole('textbox', { name: /Password/i }).fill('Skolasti@123');
+    await page.getByRole('button', { name: /Sign In|Submit/i }).click();
     await new Promise(f => setTimeout(f, 15 * 1000));
-
-    // Switch to coach view (check if button exists first)
-    const switchButton = page.getByRole('button', { name: 'Switch to coach view' });
-    const isVisible = await switchButton.isVisible().catch(() => false);
-    if (isVisible) {
-      await switchButton.click();
-      await new Promise(f => setTimeout(f, 5 * 1000));
-    }
 
     // Verify page URL is /coach/dashboard
     await expect(page).toHaveURL(/\/coach\/dashboard/);
