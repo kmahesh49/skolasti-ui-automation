@@ -4,7 +4,7 @@
 import { test, expect } from '@playwright/test';
 import { loginAndSwitchToCoachView, completeCoachOauth } from '../helpers/auth-helpers';
 
-const coachBaseUrl = 'https://harvarduniversitytest.skillrok.com/coach';
+const coachBaseUrl = 'https://patashala-testjan16-820.skillrok.com/coach';
 const randomWords = [
   'Premium',
   'Elite',
@@ -234,47 +234,36 @@ test.describe('Coach View - Subscription Plans Management', () => {
     }
     
     if (await courseSearchInput.isVisible().catch(() => false)) {
-      // Clear any existing text first, then search for "offline" courses ONLY
+      // Clear any existing text first, then search for "live" courses
       await courseSearchInput.clear();
-      await courseSearchInput.fill('offline');
-      console.log('✓ Searched for "offline" courses');
+      await courseSearchInput.fill('live');
+      console.log('✓ Searched for "live" courses');
       await page.waitForTimeout(3000);
 
       // Find and click + buttons or green circles to add courses
       // Look for rows with course titles and + icons
-      const courseRows = modal.locator('tr, [class*="row"]').filter({ hasText: /Offline Course/i });
+      const courseRows = modal.locator('tr, [class*="row"]').filter({ hasText: /Live Course|Course/i });
       const rowCount = await courseRows.count();
-      console.log(`Found ${rowCount} offline course rows`);
+      console.log(`Found ${rowCount} live course rows`);
 
-      // Click + button for first 3 courses - be more specific about finding the + button
+      // Click add button for first 3 courses
+      // Use direct role-based selector for the "Add Course" images
+      const addButtons = modal.getByRole('img', { name: /Add Course/i });
+      const buttonCount = await addButtons.count();
+      console.log(`Found ${buttonCount} add course buttons`);
+      
       let coursesAdded = 0;
-      for (let i = 0; i < Math.min(3, rowCount); i++) {
-        const row = courseRows.nth(i);
-        
-        // Look for + button in the Action column (last column)
-        // Try multiple selectors for the + button
-        let addButton = row.locator('button:has-text("+")').first();
-        let isVisible = await addButton.isVisible().catch(() => false);
-        
-        if (!isVisible) {
-          // Try looking for button with + symbol or add icon
-          addButton = row.locator('button').last();
-          isVisible = await addButton.isVisible().catch(() => false);
-        }
-        
-        if (!isVisible) {
-          // Try clicking on green circle/plus icon
-          addButton = row.locator('svg, img').last();
-          isVisible = await addButton.isVisible().catch(() => false);
-        }
+      for (let i = 0; i < Math.min(3, buttonCount); i++) {
+        const addButton = addButtons.nth(i);
+        const isVisible = await addButton.isVisible().catch(() => false);
 
         if (isVisible) {
           await addButton.click();
           await page.waitForTimeout(1000);
           coursesAdded++;
-          console.log(`✓ Clicked + button for course ${i + 1}`);
+          console.log(`✓ Clicked add button for course ${i + 1}`);
         } else {
-          console.log(`⚠ Could not find + button for course ${i + 1}`);
+          console.log(`⚠ Could not find add button for course ${i + 1}`);
         }
       }
 

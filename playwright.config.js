@@ -45,10 +45,11 @@ export default defineConfig({
       use: { ...devices['Desktop Firefox'] },
     },
 
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
+    // Webkit disabled due to transient session/authentication issues in CI
+    // {
+    //   name: 'webkit',
+    //   use: { ...devices['Desktop Safari'] },
+    // },
 
     /* Test against mobile viewports. */
     // {

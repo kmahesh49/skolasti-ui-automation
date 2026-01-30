@@ -14,17 +14,40 @@ const coachPassword = 'Skolasti@123';
  */
 export async function loginToLearnerView(page: Page, email: string = coachEmail, password: string = coachPassword) {
   // Navigate and wait for page to be ready
-  await page.goto('https://harvarduniversitytest.skillrok.com/learner/login');
+  await page.goto('https://patashala-testjan16-820.skillrok.com/learner/login');
   await page.waitForLoadState('domcontentloaded');
   await page.waitForTimeout(3000);
   
   // Fill login credentials
-  await page.getByRole('textbox', { name: 'Email' }).fill(email);
-  await page.getByRole('textbox', { name: 'Password' }).fill(password);
+  await page.getByRole('textbox', { name: /Email/i }).fill(email);
+  await page.getByRole('textbox', { name: /Password/i }).fill(password);
   
   // Click submit and wait for navigation
-  await page.getByRole('button', { name: ' Submit' }).click();
+  await page.getByRole('button', { name: /Sign In|Submit/i }).click();
   await page.waitForURL(/learner/, { timeout: 60000 });
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForTimeout(5000);
+}
+
+/**
+ * Logs in directly to coach view
+ * @param page - Playwright Page object
+ * @param email - User email
+ * @param password - User password
+ */
+export async function loginToCoachView(page: Page, email: string = coachEmail, password: string = coachPassword) {
+  // Navigate directly to coach login
+  await page.goto('https://patashala-testjan16-820.skillrok.com/coach/login');
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForTimeout(3000);
+  
+  // Fill login credentials
+  await page.getByRole('textbox', { name: /Email/i }).fill(email);
+  await page.getByRole('textbox', { name: /Password/i }).fill(password);
+  
+  // Click submit and wait for navigation to coach dashboard
+  await page.getByRole('button', { name: /Sign In|Submit/i }).click();
+  await page.waitForURL(/coach/, { timeout: 60000 });
   await page.waitForLoadState('domcontentloaded');
   await page.waitForTimeout(5000);
 }
@@ -42,7 +65,7 @@ export async function switchToCoachView(page: Page) {
   }
 
   if (!page.url().includes('/coach/')) {
-    await page.goto('https://harvarduniversitytest.skillrok.com/coach');
+    await page.goto('https://patashala-testjan16-820.skillrok.com/coach');
     await page.waitForLoadState('domcontentloaded');
   }
 }
@@ -61,8 +84,7 @@ export async function switchToLearnerView(page: Page) {
  * @param page - Playwright Page object
  */
 export async function loginAndSwitchToCoachView(page: Page) {
-  await loginToLearnerView(page);
-  await switchToCoachView(page);
+  await loginToCoachView(page);
 }
 
 export async function completeCoachOauth(page: Page, expectedPattern: RegExp = /coach\//, email: string = coachEmail, password: string = coachPassword) {
