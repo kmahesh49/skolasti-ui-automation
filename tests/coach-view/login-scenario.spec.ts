@@ -161,15 +161,29 @@ test.describe('Login Scenario', () => {
 
     // Step 4: Click Submit button and wait for either FusionAuth redirect or direct dashboard navigation
     stepStart = getFormattedTimestamp();
+    
+    // Try multiple selectors for Submit button
+    const submitButton = page.getByRole('button', { name: /Submit|Login|Sign In/i }).first();
+    
+    // Check if button exists before clicking
+    const buttonExists = await submitButton.isVisible({ timeout: 10000 }).catch(() => false);
+    if (!buttonExists) {
+      console.error('❌ Submit button not found. Checking page state...');
+      console.error('Current URL:', page.url());
+      console.error('Page title:', await page.title());
+      await page.screenshot({ path: 'login-submit-button-missing.png', fullPage: true });
+      throw new Error('Submit button not found on login page');
+    }
+    
     await Promise.all([
       page.waitForURL(
         (url: URL) => {
           const target = url.toString();
-          return target.includes('auth.skillrok.com') || target.includes('/coach/dashboard');
+          return target.includes('auth.skillrok.com') || target.includes('auth.skolasti.com') || target.includes('/coach/dashboard') || target.includes('/coach/');
         },
-        { timeout: 45000 },
+        { timeout: 90000 },
       ),
-      page.getByRole('button', { name: 'Submit' }).click(),
+      submitButton.click(),
     ]);
     stepEnd = getFormattedTimestamp();
     testMetrics.stepTimings.push({

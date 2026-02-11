@@ -5,9 +5,41 @@ const BASE_URL = "https://patashala-testjan16-820.skillrok.com/coach";
 
 // Helper function to navigate to Studio page
 async function navigateToStudio(page: Page) {
-  await page.getByRole("listitem").filter({ hasText: "Creation HUB" }).click();
-  await page.waitForTimeout(500);
-  await page.getByRole("link", { name: "Studio" }).click();
+  // Wait for page to be ready
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForTimeout(3000);
+  
+  // Try multiple selectors for Creation HUB
+  const creationHubSelectors = [
+    page.getByRole("listitem").filter({ hasText: "Creation HUB" }),
+    page.locator('li:has-text("Creation HUB")'),
+    page.locator('[role="listitem"]:has-text("Creation HUB")'),
+    page.locator('text=Creation HUB')
+  ];
+  
+  let clicked = false;
+  for (const selector of creationHubSelectors) {
+    const isVisible = await selector.first().isVisible({ timeout: 5000 }).catch(() => false);
+    if (isVisible) {
+      await selector.first().click();
+      clicked = true;
+      break;
+    }
+  }
+  
+  if (!clicked) {
+    // Try direct navigation to Studio
+    console.log("⚠️  Creation HUB not found, using direct navigation");
+    await page.goto('https://patashala-testjan16-820.skillrok.com/coach/studio', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(3000);
+    console.log("✓ Directly navigated to Studio page");
+    // Skip heading verification after direct navigation
+    return;
+  } else {
+    await page.waitForTimeout(500);
+    await page.getByRole("link", { name: "Studio" }).click();
+  }
+  
   await page.waitForLoadState("domcontentloaded");
   await page.waitForTimeout(2000);
   

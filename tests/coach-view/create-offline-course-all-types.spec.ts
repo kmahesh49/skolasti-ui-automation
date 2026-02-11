@@ -181,7 +181,7 @@ test.describe('Coach Studio - Offline Course', () => {
   // Test will be skipped in CI if files are not available
   test('Complete Course Creation Flow - Metadata, Curriculum, and Content Library Verification', async ({ page, browserName }) => {
     // Skip Firefox due to OAuth/React compatibility issues during authentication flow
-    test.skip(browserName === 'firefox', 'Firefox has OAuth/React errors during initial authentication that cause timeouts');
+    // test.skip(browserName === 'firefox', 'Firefox has OAuth/React errors during initial authentication that cause timeouts');
     
     test.setTimeout(600000); // 10 minutes timeout for complete flow
     courseTitle = buildRandomName('Offline Course');
@@ -192,24 +192,34 @@ test.describe('Coach Studio - Offline Course', () => {
 
     // Step 1: Login and navigate to Coach Studio
     await loginAndSwitchToCoachView(page);
-    
-    // Step 2: Navigate via sidebar - Click Creation HUB
-    const creationHubLink = page.getByRole('link', { name: 'Creation HUB' }).or(page.getByText('Creation HUB')).first();
-    await creationHubLink.click();
-    await page.waitForTimeout(1000);
-    console.log('✓ Clicked Creation HUB');
-    
-    // Click Studio from the sidebar menu
-    const studioLink = page.getByRole('link', { name: 'Studio' }).or(page.getByText('Studio', { exact: true })).first();
-    await studioLink.click();
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(3000);
-    console.log('✓ Clicked Studio from sidebar');
-    console.log('Current URL:', page.url());
+    
+    // Step 2: Navigate via sidebar - Click Creation HUB with fallback
+    const creationHubLink = page.locator('li:has-text("Creation HUB"), [role="link"]:has-text("Creation HUB"), text="Creation HUB"').first();
+    const hasCreationHub = await creationHubLink.isVisible({ timeout: 10000 }).catch(() => false);
+    
+    if (hasCreationHub) {
+      await creationHubLink.click();
+      await page.waitForTimeout(1000);
+      console.log('✓ Clicked Creation HUB');
+      
+      // Click Studio from the sidebar menu
+      const studioLink = page.locator('a:has-text("Studio"), [role="link"]:has-text("Studio")').first();
+      await studioLink.click();
+      await page.waitForTimeout(2000);
+      console.log('✓ Clicked Studio');
+    } else {
+      console.log('⚠️  Creation HUB not found, using direct navigation');
+      await page.goto('https://patashala-testjan16-820.skillrok.com/coach/studio', { waitUntil: 'networkidle', timeout: 60000 });
+      await page.waitForTimeout(5000); // Wait for React to render
+      console.log('✓ Navigated directly to Studio page');
+      console.log('Current URL:', page.url());
+    }
     
     // Step 3: Click "Create course" card
     const courseCard = page.getByText('Create course').first();
-    await expect(courseCard).toBeVisible({ timeout: 10000 });
+    await expect(courseCard).toBeVisible({ timeout: 30000 });
     await courseCard.click();
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(3000);

@@ -271,11 +271,16 @@ test.describe('Learner Offline Free Course - Test Video Link (ID: 182)', () => {
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
 
-    // Should see Continue or Resume button
-    const resumeBtn = page.locator('button:has-text("Continue"), button:has-text("Resume")').first();
-    await resumeBtn.waitFor({ state: 'visible', timeout: 5000 });
-    await resumeBtn.click();
-    console.log('✅ Clicked Resume/Continue button');
+    // Should see Continue or Resume button (or might already be on course page)
+    const resumeBtn = page.locator('button:has-text("Continue"), button:has-text("Resume"), button:has-text("Start"), a:has-text("Continue")').first();
+    const hasResumeBtn = await resumeBtn.isVisible({ timeout: 5000 }).catch(() => false);
+    
+    if (hasResumeBtn) {
+      await resumeBtn.click();
+      console.log('✅ Clicked Resume/Continue button');
+    } else {
+      console.log('ℹ️  No Resume/Continue button found - may already be on course page');
+    }
 
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(3000);

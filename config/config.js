@@ -1,9 +1,8 @@
-// Load environment variables from .env file
+// Environment variables are loaded in playwright.config.js
 // This keeps passwords and sensitive data secure
-require('dotenv').config();
 
 module.exports = {
-  // Timeout settings (in milliseconds)
+  // Timeout settings
   timeout: {
     default: 30000,      // 30 seconds for most actions
     navigation: 60000,   // 60 seconds for page loads
